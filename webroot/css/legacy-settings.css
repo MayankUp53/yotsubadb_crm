@@ -1,0 +1,22 @@
+/* Layout values from app/View and app/webroot/css/style.css. */
+.settings-page .filterable { margin-top: 15px; }
+.settings-page .btn_margin { margin: 5px; }
+.settings-page #jquery-ui-sortable {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 50%;
+}
+.settings-page #jquery-ui-sortable li {
+    margin: 0 3px 3px 3px;
+    padding: .3em;
+    padding-left: 1em;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: move;
+    border-radius: 4px;
+}
+.settings-page a:link { color: #0000ff; }
+.settings-page a:visited { color: #000080; }
+.settings-page a:hover { color: #ff0000; }
+.settings-page a:active { color: #ff8000; }

@@ -1,5 +1,86 @@
 # AmeyoJ CRM (CakePHP 5)
 
+## Original app customer/contact flows
+
+The Customers and Contacts actions now use the personal-customer fields from
+`app/Controller`, `app/Model` and `app/View`, implemented with CakePHP 5 ORM and
+Form helpers. Both modules support persistent search, CSV export, details,
+editing and POST-only soft deletion. Customer details include linked history
+and a new-contact form; contacts retain five product lines, totals, follow-up
+dates, checkbox groups and the older inquiry/edit fields. Administrator-only
+contact fields, result choices, CSV export and deletion follow the legacy UI.
+
+Screens now render the original `app/View/Customers` and `app/View/Contacts`
+markup through a CakePHP 5 form adapter. The original labels, table layouts,
+history groups, role-specific controls, colours and double-click navigation
+are retained without added action columns or import/back buttons. New contact
+entry uses the form embedded in the original customer-detail screen; the
+original inquiry edit screen and product/health update screen remain separate.
+Date/time pickers, product totals, age/year calculation and checkbox groups use
+the original form structure. Pagination retains the saved search conditions.
+
+Large databases require migration `20261110050000_AddCrmListIndexes`, which adds
+`(deleted, updated, created, id)` indexes to customers and contacts. List paging
+fetches 21 rows to display 20 and determine whether another page exists; it
+does not run a full `COUNT(*)` across the customer/contact join. Counters show
+the current page and visible row range, with previous/next navigation instead
+of a total/last-page number. This avoids the 120-second timeout on the existing
+multi-million-row MyISAM database without increasing PHP's execution limit.
+
+`/imports?type=customers` accepts the original eleven-column workbook (name,
+kana, gender, age, decade, postcode, four address columns, telephone). Existing
+customers match on name + normalized telephone. `/imports?type=contacts` provides
+a separate template: customer ID is required, blank history ID inserts, and an
+existing history ID updates only that customer's record. CSV supports UTF-8 and
+Shift-JIS; XLSX, XLS and ODS use the first sheet. Import results include failed
+row numbers. Deleted records are not reactivated implicitly.
+
+Migration `20261109070000_AddOriginalAppCrmFields` adds missing columns without
+dropping legacy data. On existing databases with unrecorded older migrations,
+run this migration from an isolated source directory rather than applying all
+historic migrations (some historic migrations drop columns). Clear CakePHP
+metadata caches after changing databases or applying schema changes.
+
+Run the isolated regression suite without migrating the application database:
+
+```powershell
+php vendor/phpunit/phpunit/phpunit --no-configuration --bootstrap tests/bootstrap_isolated.php tests/TestCase/Controller/CustomersFlowTest.php
+```
+
+## Settings from the original app
+
+`/settings` provides the original five master lists: products, results,
+symptoms, conditions and purchase reasons. Each supports list/add/view/edit,
+soft deletion and drag/drop ordering. Product unit prices are
+entered at creation and remain read-only on edit, matching the original form.
+Inactive entries remain visible in grey; deleted entries are hidden without
+removing references from customer history. Changes record the current user and
+timestamps. Read-only operators can inspect lists but cannot change settings.
+
+Both dashed paths (`/mt-products/edit/1`) and original underscore paths
+(`/mt_products/edit/1`) resolve to the same actions. Deletion and sorting use
+POST forms with CSRF protection. Sorting validates all IDs before changing ranks.
+
+Settings and master views use the original app markup and styles, retaining
+its exact visible labels and controls. Additional detail/arrow/back/template
+buttons and explanatory text are not added to those screens. Workbook templates
+remain available through the import page and template routes. Phone lookup (`/imports/getphonedata`, also
+`/imports/get-phone-data`) exports Shift-JIS CSV with the original twelve
+columns. It preserves uploaded order, duplicate requests and unmatched phone
+numbers, excludes deleted customers, and restores missing domestic leading
+zeroes from numeric Excel cells. It performs no writes to a shared `phones`
+staging table. The contact import/template added above remains available.
+
+Settings tests use SQLite without modifying the configured application database:
+
+```powershell
+php vendor/phpunit/phpunit/phpunit --no-configuration --bootstrap tests/bootstrap_isolated.php tests/TestCase/Controller/SettingsFlowTest.php
+```
+
+The remaining sections are historical project notes. For Customers/Contacts/Settings,
+the original-app implementation described above supersedes the old custom-field
+metadata examples and deployment instructions below.
+
 > **Static build notice:** This `5_newcrm_static` copy removes the legacy custom-field
 > module entirely. Customers/contacts now use fixed, hard-coded fields defined in
 > `AppController::$defaultFieldConfig`, and the Custom Fields admin UI no longer exists.

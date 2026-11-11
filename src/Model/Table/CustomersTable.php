@@ -38,6 +38,7 @@ class CustomersTable extends Table
         parent::initialize($config);
 
         $this->setTable('customers');
+        $this->addBehavior('PaginationCount');
         $this->setDisplayField('name');
         $this->setPrimaryKey('id');
            $this->hasMany('Contacts', [
@@ -120,6 +121,27 @@ class CustomersTable extends Table
                 'message' => 'この client_cd は既に存在します'
             ]);
 
+        return $validator;
+    }
+
+    public function validationLegacy(Validator $validator): Validator
+    {
+        $validator->requirePresence('tel', 'create')->notEmptyString('tel', '電話番号は必須です。入力してください。');
+        $validator->requirePresence('customer_name', 'create')->notEmptyString('customer_name', '名前は必須です。入力してください。');
+        $validator->requirePresence('phone1', 'create')->notEmptyString('phone1')->regex('phone1', '/^[0-9]+$/', '半角数字で入力してください。');
+        foreach (['age', 'dob', 'nendai'] as $field) {
+            $validator->nonNegativeInteger($field)->allowEmptyString($field);
+        }
+        $validator->add('customer_name', 'uniqueCustomer', [
+            'rule' => function ($value, array $context): bool {
+                $query = $this->find()->where(['customer_name' => $value, 'phone1' => $context['data']['phone1'] ?? '']);
+                if (!empty($context['data']['id'])) {
+                    $query->where(['id !=' => $context['data']['id']]);
+                }
+                return $query->count() === 0;
+            },
+            'message' => 'この顧客（電話番号＋名前）は既に存在します',
+        ]);
         return $validator;
     }
 

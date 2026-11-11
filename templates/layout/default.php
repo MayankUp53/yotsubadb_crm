@@ -9,9 +9,14 @@ $cakeDescription = 'AmeyoJ CRM';
 $currentUser = $this->request->getAttribute('identity');
 $controller = $this->request->getParam('controller');
 $action = $this->request->getParam('action');
+$legacySettingsLayout = in_array($controller, ['Settings', 'Customers', 'Contacts'], true)
+    || ($controller === 'Users' && in_array($action, ['add', 'edit'], true))
+    || isset(\App\Service\LegacySettings::sections()[$controller]);
+if ($legacySettingsLayout) {
+    $cakeDescription = 'よつ葉のサプリＣＲＭ';
+}
 
 // Set active menu items
-$home_active = ($controller == 'Homes') ? 'active' : null;
 $customers_active = ($controller == 'Customers') ? 'active' : null;
 $contacts_active = ($controller == 'Contacts') ? 'active' : null;
 $settings_active = ($controller == 'Settings') ? 'active' : null;
@@ -31,9 +36,14 @@ $users_active = ($controller == 'Users') ? 'active' : null;
 
 
     <!-- CSS -->
-    <?= $this->Html->css('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css') ?>
-    <?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css') ?>
-    <?= $this->Html->css('theme.css') ?>
+    <?php if ($legacySettingsLayout): ?>
+        <?= $this->Html->css('legacy-settings-bootstrap') ?>
+        <?= $this->Html->css('legacy-settings-ui/jquery-ui-1.10.2.custom.min') ?>
+    <?php else: ?>
+        <?= $this->Html->css('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css') ?>
+        <?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css') ?>
+        <?= $this->Html->css('theme.css') ?>
+    <?php endif ?>
     <style>
         .btn_margin { margin: 10px 0; }
         a:link { color: #0000ff; }
@@ -46,14 +56,14 @@ $users_active = ($controller == 'Users') ? 'active' : null;
     <?= $this->fetch('css') ?>
 </head>
 <body>
-    <div class="container-fluid">
+    <div class="<?= $legacySettingsLayout ? 'container' : 'container-fluid' ?>">
         <?php if ($controller != 'Users' || $action != 'login'): ?>
             <!-- Navbar -->
           <div class="bs-docs-section clearfix">
     <div class="row">
         <div class="col-lg-12">
             <div class="bs-component">
-                <nav class="navbar navbar-inverse" style="background-color:#20b2aa !important; border-color:#20b2aa !important;">
+                <nav class="navbar navbar-inverse" <?= $legacySettingsLayout ? '' : 'style="background-color:#20b2aa !important; border-color:#20b2aa !important;"' ?>>
                     <div class="container-fluid">
                         <div class="navbar-header">
                             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-2" style="border-color:#20b2aa;">
@@ -66,11 +76,6 @@ $users_active = ($controller == 'Users') ? 'active' : null;
 
                         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
                             <ul class="nav navbar-nav">
-                                <li class="<?= $home_active ?>">
-                                    <a href="<?= $this->Url->build('/homes') ?>" style="color:#ffffff !important;">ホーム
-                                        <span class="sr-only">（現在）</span>
-                                    </a>
-                                </li>
                                 <li class="<?= $customers_active ?>">
                                     <a href="<?= $this->Url->build('/customers') ?>" style="color:#ffffff !important;">顧客検索<span class="sr-only">(current)</span></a>
                                 </li>

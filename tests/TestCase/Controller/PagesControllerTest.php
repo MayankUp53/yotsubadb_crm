@@ -28,6 +28,21 @@ class PagesControllerTest extends TestCase
 {
     use IntegrationTestTrait;
 
+    /** Authenticate the request without querying or modifying the application database. */
+    private function loginForPageTests(): void
+    {
+        $this->session(['Auth' => new \App\Model\Entity\User([
+            'id' => 1, 'loginid' => 'page-test', 'user_name' => 'Page Test', 'auth' => 9,
+        ])]);
+    }
+
+    public function testPagesRequireLogin(): void
+    {
+        $this->get('/pages/home');
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/users/login');
+    }
+
     /**
      * testDisplay method
      *
@@ -35,11 +50,12 @@ class PagesControllerTest extends TestCase
      */
     public function testDisplay()
     {
+        $this->loginForPageTests();
         Configure::write('debug', true);
         $this->get('/pages/home');
         $this->assertResponseOk();
         $this->assertResponseContains('CakePHP');
-        $this->assertResponseContains('<html>');
+        $this->assertResponseContains('<html');
     }
 
     /**
@@ -49,6 +65,7 @@ class PagesControllerTest extends TestCase
      */
     public function testMissingTemplate()
     {
+        $this->loginForPageTests();
         Configure::write('debug', false);
         $this->get('/pages/not_existing');
 
@@ -63,6 +80,7 @@ class PagesControllerTest extends TestCase
      */
     public function testMissingTemplateInDebug()
     {
+        $this->loginForPageTests();
         Configure::write('debug', true);
         $this->get('/pages/not_existing');
 
@@ -79,6 +97,7 @@ class PagesControllerTest extends TestCase
      */
     public function testDirectoryTraversalProtection()
     {
+        $this->loginForPageTests();
         $this->get('/pages/../Layout/ajax');
         $this->assertResponseCode(403);
         $this->assertResponseContains('Forbidden');

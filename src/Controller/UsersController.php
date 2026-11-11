@@ -16,17 +16,6 @@ use Cake\ORM\Exception\PersistenceFailedException;
 class UsersController extends AppController
 {
     /**
-     * Initialization hook method.
-     *
-     * @return void
-     */
-    public function initialize(): void
-    {
-        parent::initialize();
-        $this->loadComponent('App.CallbackNotification');
-    }
-
-    /**
      * Index method
      *
      * @return \Cake\Http\Response|null|void Renders view
@@ -75,7 +64,8 @@ class UsersController extends AppController
     {
         $user = $this->Users->newEmptyEntity();
         if ($this->request->is('post')) {
-            $data = $this->request->getData();
+            $raw = $this->request->getData('User') ?? $this->request->getData();
+            $data = array_intersect_key($raw, array_flip(['disp_cd', 'user_name', 'auth', 'loginid', 'password']));
             $now = date('Y-m-d H:i:s');
             $currentUser = $this->getCurrentUser();
 
@@ -84,16 +74,15 @@ class UsersController extends AppController
             $data['updated'] = $now;
             $data['updated_user_id'] = $currentUser ? $currentUser->id : 0;
 
-            $user = $this->Users->patchEntity($user, $data);
+            $user = $this->Users->patchEntity($user, $data, ['validate' => 'legacy']);
             if ($this->Users->save($user)) {
-                $this->Flash->success(__('ユーザの登録が完了しました。'));
+                $this->Flash->success(__('ユーザ情報の登録が完了しました。'));
                 return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('ユーザの登録に失敗しました。もう一度操作してください。'));
+            $this->Flash->error(__('ユーザ情報の登録に失敗しました。もう一度操作してください。'));
         }
 
-        $warning = $this->CallbackNotification->getNumOfWarning();
-        $this->set(compact('user', 'warning'));
+        $this->set(compact('user'));
         $this->setListValue();
     }
 
@@ -106,38 +95,29 @@ class UsersController extends AppController
      */
     public function edit(?string $id = null)
     {
-        // Handle back button
-        if ($this->request->is('post') && $this->request->getData('back')) {
-            return $this->redirect(['action' => 'view', $id]);
-        }
-
-        // Handle delete button
-        if ($this->request->is('post') && $this->request->getData('delete')) {
-            return $this->redirect(['action' => 'delete', $id]);
-        }
-
         $user = $this->Users->find()
-            ->where(['Users.id' => $id, 'Users.deleted IS' => null])
+            ->where(['Users.id' => $id])
             ->firstOrFail();
 
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $data = $this->request->getData();
-            $now = date('Y-m-d H:i:s');
+        if ($this->request->is(['post', 'put'])) {
+            $raw = $this->request->getData('User') ?? $this->request->getData();
+            $data = array_intersect_key($raw, array_flip(['disp_cd', 'user_name', 'auth', 'loginid', 'password']));
             $currentUser = $this->getCurrentUser();
-
-            $data['updated'] = $now;
             $data['updated_user_id'] = $currentUser ? $currentUser->id : 0;
 
-            $user = $this->Users->patchEntity($user, $data);
+            $user = $this->Users->patchEntity($user, $data, ['validate' => 'legacy']);
             if ($this->Users->save($user)) {
-                $this->Flash->success(__('ユーザの更新が完了しました。'));
+                $this->Flash->success(__('ユーザ情報の更新が完了しました。'));
                 return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('ユーザの更新に失敗しました。もう一度操作してください。'));
+            $this->Flash->error(__('ユーザ情報の更新に失敗しました。もう一度操作してください。'));
+            // Legacy Edit reloads stored values on failure while retaining validation messages.
+            $errors = $user->getErrors();
+            $user = $this->Users->get($id);
+            $user->setErrors($errors);
         }
 
-        $warning = $this->CallbackNotification->getNumOfWarning();
-        $this->set(compact('user', 'warning'));
+        $this->set(compact('user'));
         $this->setListValue();
     }
 
@@ -178,17 +158,53 @@ class UsersController extends AppController
         $this->request->allowMethod(['get', 'post']);
         $result = $this->Authentication->getResult();
 
-        if ($result->isValid()) {
-            $target = $this->Authentication->getLoginRedirect() ?? '/homes';
-            return $this->redirect($target);
+        if ($this->request->is('post')) {
+            if ($result !== null && $result->isValid()) {
+                return $this->redirect(['controller' => 'Customers', 'action' => 'index']);
+            }
+            $this->Flash->error(__('ユーザ名またはパスワードが誤っています。再度入力してください。'));
+        }
+    }
+
+    /** Legacy Knowledge URL: /users/home/{userid}/{phone}/{lead_name}. */
+    public function home(?string $userid = null, ?string $phone = null, ?string $lead_name = null)
+    {
+        $this->request->allowMethod(['get', 'post']);
+        $user = $userid === null || $userid === '' ? null : $this->Users->find()
+            ->where(['Users.loginid' => $userid, 'Users.deleted IS' => null])
+            ->first();
+        $hasher = new \App\Auth\LegacyPasswordHasher();
+        if (!$user || !$hasher->check($this->legacyHomePassword($userid), (string)$user->password)) {
+            $this->Flash->error(__('ユーザ名またはパスワードが誤っています。再度入力してください。'));
+            return $this->redirect(['action' => 'login']);
         }
 
-        if ($this->request->is('post')) {
-            $result = $this->Authentication->getResult();
-            if (!$result->isValid()) {
-                $this->Flash->error(__('ユーザ名またはパスワードが誤っています。再度入力してください。'));
-            }
+        // Verify credentials before replacing and persisting the authenticated identity.
+        $this->Authentication->setIdentity($user);
+        if ((string)$user->auth === '9') {
+            return $this->redirect(['controller' => 'Customers', 'action' => 'ameyo', $phone ?? '', $lead_name ?? '']);
         }
+        return $this->redirect(['action' => 'blank']);
+    }
+
+    /** Password selection used by the original app's home() action. */
+    protected function legacyHomePassword(string $userid): string
+    {
+        if ($userid === '1965') {
+            return '1413';
+        }
+        if ($userid === '1952') {
+            return '2558';
+        }
+        if (in_array($userid, array_map('strval', range(5195, 5204)), true)) {
+            return '0123';
+        }
+        return '123456';
+    }
+
+    public function blank()
+    {
+        $this->viewBuilder()->setLayout('blank');
     }
 
     /**
@@ -205,39 +221,27 @@ class UsersController extends AppController
     /**
      * SSO method (Single Sign-On)
      *
-     * @param string|null $campaign Campaign ID
      * @param string|null $userid User ID
-     * @param string|null $sessionId Session ID
+     * @param string|null $phone Customer phone number
+     * @param string|null $lead_name Lead/list name
      * @return \Cake\Http\Response|null|void
      */
-    public function sso(?string $campaign = null, ?string $userid = null, ?string $sessionId = null)
+    public function sso(?string $userid = null, ?string $phone = null, ?string $lead_name = null)
     {
-        if (empty($campaign) || empty($userid) || empty($sessionId)) {
-            $this->Flash->error(__('必須のSSOパラメータが不足しています。再度操作してください。'));
-            return $this->redirect(['action' => 'login']);
-        }
-
-        $user = $this->Users->find()
+        $this->request->allowMethod(['get', 'post']);
+        $user = $userid === null || $userid === '' ? null : $this->Users->find()
             ->where(['Users.loginid' => $userid, 'Users.deleted IS' => null])
             ->first();
-
-        if (!$user) {
-            $this->Flash->error(__('ユーザ情報が取得できませんでした。'));
+        // Original sso() submits this fixed password, even for IDs mapped differently in home().
+        $hasher = new \App\Auth\LegacyPasswordHasher();
+        if (!$user || !$hasher->check('123456', (string)$user->password)) {
+            $this->Flash->error(__('ユーザ名またはパスワードが誤っています。再度入力してください。'));
             return $this->redirect(['action' => 'login']);
         }
 
-        // Trust the SSO caller and attach the identity directly.
-        $this->Authentication->logout();
         $this->Authentication->setIdentity($user);
-
-        // Persist session context used by HomesController.
-        $session = $this->request->getSession();
-        $session->write([
-            'campaign' => $campaign,
-            'sessionId' => $sessionId,
-        ]);
-
-        return $this->redirect(['controller' => 'Homes', 'action' => 'index']);
+        $this->request->getSession()->write('lead_name', $lead_name ?? '');
+        return $this->redirect(['controller' => 'Customers', 'action' => 'ameyo', $phone ?? '', $lead_name ?? '']);
     }
 
     /**
@@ -248,7 +252,7 @@ class UsersController extends AppController
     protected function setListValue(): void
     {
         // 権限
-        $authOpt = ['0' => '一般', '9' => 'SV', '99' => '管理者'];
+        $authOpt = ['0' => '一般', '9' => '管理者'];
 
         // 作業者
         $opeOpt = $this->Users->find('list', keyField: 'id', valueField: 'user_name')
@@ -268,7 +272,7 @@ class UsersController extends AppController
     public function beforeFilter(EventInterface $event): ?\Cake\Http\Response
     {
         parent::beforeFilter($event);
-        $this->Authentication->allowUnauthenticated(['sso', 'login']);
+        $this->Authentication->allowUnauthenticated(['sso', 'login', 'home']);
         return null;
     }
 }
