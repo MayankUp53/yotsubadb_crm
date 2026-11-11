@@ -51,17 +51,26 @@ return function (RouteBuilder $routes): void {
 
     $routes->scope('/', function (RouteBuilder $builder): void {
         /*
-         * Default route - connect '/' to homes index (legacy landing).
+         * Default route - show the customer list.
          */
-        $builder->connect('/', ['controller' => 'Homes', 'action' => 'index']);
+        $builder->connect('/', ['controller' => 'Customers', 'action' => 'index']);
         $builder->connect('/core-settings', ['controller' => 'CoreSettings', 'action' => 'index']);
         $builder->connect('/mt-phonelists', ['controller' => 'MtPhonelists', 'action' => 'index']);
         $builder->connect('/mt-cids', ['controller' => 'MtCids', 'action' => 'index']);
         $builder->connect('/mt-queues', ['controller' => 'MtQueues', 'action' => 'index']);
-        $builder->connect('/mt-statuses', ['controller' => 'MtStatuses', 'action' => 'index']);
-        $builder->connect('/mt-products', ['controller' => 'MtProducts', 'action' => 'index']);
+        foreach (\App\Service\LegacySettings::sections() as $controller => $section) {
+            foreach ([$section['slug'], $section['table']] as $path) {
+                $builder->connect('/' . $path, ['controller' => $controller, 'action' => 'index']);
+                $builder->connect('/' . $path . '/sort-update/*', ['controller' => $controller, 'action' => 'sortupdate']);
+                $builder->connect('/' . $path . '/{action}/*', ['controller' => $controller])
+                    ->setPatterns(['action' => 'index|add|view|edit|delete|sortupdate']);
+            }
+        }
         $builder->connect('/callbacks', ['controller' => 'Callbacks', 'action' => 'index']);
         $builder->connect('/imports', ['controller' => 'Imports', 'action' => 'index']);
+        $builder->connect('/imports/get-phone-data', ['controller' => 'Imports', 'action' => 'getphonedata']);
+        $builder->connect('/imports/getphonedata', ['controller' => 'Imports', 'action' => 'getphonedata']);
+        $builder->connect('/imports/phone-template', ['controller' => 'Imports', 'action' => 'phoneTemplate']);
         $builder->connect('/settings', ['controller' => 'Settings', 'action' => 'index']);
 
 
