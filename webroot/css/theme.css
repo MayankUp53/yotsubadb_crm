@@ -40,26 +40,6 @@ table.table thead tr {
 .btn-success,
 .btn-danger {
     border-radius: 2px;
-
-/* Dynamic form blocks */
-.field-block {
-    padding: 8px 10px;
-    background: #f5fbff;
-    border: 1px solid #d9e7f4;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-
-.field-label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 6px;
-    color: #1d2a36;
-}
-
-.panel-heading {
-    color: var(--header-text);
-}
 }
 
 /* Dynamic form blocks */

@@ -1,90 +1,98 @@
-<script>
-function formSubmit() {
-    var pattern = document.querySelector('.pattern')?.value;
-    if (!pattern) {
-        alert('取込パターンを選択してください');
-        return false;
-    }
-    return confirm('取込を開始します。よろしいですか？');
-}
-</script>
+<?php $this->Form->setTemplates(['submitContainer' => '{{content}}']); ?>
+<?= $this->Html->css('legacy-settings', ['block' => true]) ?>
+<div class="settings-page bs-docs-section clearfix">
 
-<?php $patternOpt = ['1' => '取込パターン①（新規）']; ?>
 
-<div class="bs-docs-section clearfix">
-    <div class="panel panel-primary filterable">
-        <div class="panel-heading">
-            <h3 class="panel-title">データ取込</h3>
-        </div>
-        <?= $this->Form->create(null, [
-            'url' => ['controller' => 'Imports', 'action' => 'import'],
-            'type' => 'file',
-            'enctype' => 'multipart/form-data',
-        ]) ?>
-        <table class="table table-hover">
-            <tbody>
-                <tr>
-                    <th width="10%" style="vertical-align:middle">&nbsp;顧客データ</th>
-                    <td width="20%" style="vertical-align:middle">
-                        <?= $this->Form->control('pattern', [
-                            'label' => false,
-                            'div' => false,
-                            'type' => 'select',
-                            'class' => 'form-control if100 pattern',
-                            'options' => $patternOpt,
-                            'empty' => '-----',
-                        ]) ?>
-                    </td>
-                    <td width="40%" style="vertical-align:middle">
-                        <?= $this->Form->file('result') ?>
-                    </td>
-                    <td width="30%" style="vertical-align:middle">
-                        <button type="button" style="width:100px;height:34px;cursor:pointer;" onclick="location.href='<?= $this->Url->build(['controller' => 'Imports', 'action' => 'template']) ?>';" class="btn-warning btn-xs">雛形DL</button>
-                        <?= $this->Form->button('取　込', [
-                            'div' => false,
-                            'id' => 'import',
-                            'name' => 'import',
-                            'type' => 'submit',
-                            'class' => 'btn-info btn-xs',
-                            'style' => 'width:100px;height:34px;cursor:pointer',
-                            'onclick' => 'return formSubmit();',
-                        ]) ?>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <?= $this->Form->end() ?>
-    </div>
 
-    <div class="panel panel-primary filterable">
-        <div class="panel-heading">
-            <h3 class="panel-title">設定項目一覧</h3>
-        </div>
-        <table class="table table-hover">
-          <tbody>
-     <tr>
-        <th style="vertical-align:middle">&nbsp;ステータスリスト</th>
-        <td width="50%"><button onclick="location.href='<?= $this->Url->build('/mt-statuses') ?>';" class="btn-info btn-xs" style="width:150px;height:30px;cursor:pointer">一覧</button></td>
-    </tr>
-     <tr>
-         <th style="vertical-align:middle">&nbsp;店舗への連絡</th>
-         <td width="50%"><button onclick="location.href='<?= $this->Url->build('/mt-queues') ?>';" class="btn-info btn-xs" style="width:150px;height:30px;cursor:pointer">一覧</button></td>
-     </tr>
-    <tr>
-        <th style="vertical-align:middle">&nbsp;電話帳＆店舗リスト</th>
-        <td width="50%"><button onclick="location.href='<?= $this->Url->build('/mt-phonelists') ?>';" class="btn-info btn-xs" style="width:150px;height:30px;cursor:pointer">一覧</button></td>
-    </tr>
-    <tr>
-        <th style="vertical-align:middle">&nbsp;発信者番号リスト</th>
-        <td width="50%"><button onclick="location.href='<?= $this->Url->build('/mt-cids') ?>';" class="btn-info btn-xs" style="width:150px;height:30px;cursor:pointer">一覧</button></td>
-    </tr>
+	<div class="panel panel-primary filterable">
+		<div class="panel-heading">
+			<h3 class="panel-title">データ取込</h3>
+		</div>
+		<?php echo $this->Form->create(null, ['url' => ['controller' => 'Imports', 'action' => 'import'], 'type' => 'file', 'class' => 'legacy-settings-upload', 'data-mode' => 'import']); ?>
+<table class="table table-hover ">
+			<tbody>
+				<tr>
+					<th width="30%">顧客データ　xlsx</th>
+					<td width="40%">
+							<?php echo $this->Form->file('result',array('class' => 'importresult', 'id' => 'settings-import-result')); ?>
+					</td>
+					<td width="30%">
+						<div id="indicator-import">
+							<?php echo $this->Form->submit('取　込', array('div'=>false, 'name' => 'searching', 'type'=>'submit','class'=>'btn-success btn-xs indicator-import', 'style'=>'width:150px;height:30px;cursor:pointer' )); ?>
+						</div>
+					</td>
+				</tr>
+				</tbody>
+		</table>
+<?php echo $this->Form->end();?>
+	</div>
 
-    <tr>
-        <th style="vertical-align:middle">&nbsp;高度な設定</th>
-        <td width="50%"><button onclick="location.href='<?= $this->Url->build('/core-settings') ?>';" class="btn-danger btn-xs" style="width:150px;height:30px;cursor:pointer">一覧</button></td>
-    </tr>
-</tbody>
+	<div class="panel panel-primary filterable">
+		<div class="panel-heading">
+			<h3 class="panel-title">データ出力</h3>
+		</div>
+		<?php echo $this->Form->create(null, ['url' => ['controller' => 'Imports', 'action' => 'getphonedata'], 'type' => 'file', 'class' => 'legacy-settings-upload', 'data-mode' => 'getphonedata']); ?>
+<table class="table table-hover ">
+			<tbody>
+				<tr>
+					<th width="30%">電話番号リスト　xlsx</th>
+					<td width="40%">
+							<?php echo $this->Form->file('result',array('class' => 'exportresult', 'id' => 'settings-export-result')); ?>
+					</td>
+					<td width="30%">
+						<div id="indicator-export">
+								<?php echo $this->Form->submit('出　力', array('div'=>false, 'name' => 'searching', 'type'=>'submit','class'=>'btn-success btn-xs indicator-export', 'style'=>'width:150px;height:30px;cursor:pointer')); ?>
+						</div>
+					</td>
+				</tr>
+				</tbody>
+		</table>
+<?php echo $this->Form->end();?>
+	</div>
 
-        </table>
-    </div>
+	<div class="panel panel-primary filterable">
+		<div class="panel-heading">
+			<h3 class="panel-title">設定項目一覧</h3>
+		</div>
+		<table class="table table-hover ">
+			<tbody>
+				<tr>
+					<th>商品一覧</th>
+					<td width="30%"><button onclick="location.href='<?php echo $this->Url->build('/mt_products/index/');?>';" class="btn-info btn-xs" style='width:150px;height:30px;cursor:pointer'>一覧</button></td>
+				</tr>
+				<tr>
+					<th>結果一覧</th>
+					<td width="30%"><button onclick="location.href='<?php echo $this->Url->build('/mt_dispositions/index/');?>';" class="btn-info btn-xs" style='width:150px;height:30px;cursor:pointer'>一覧</button></td>
+				</tr>
+				<tr>
+					<th>症状一覧</th>
+					<td width="30%"><button onclick="location.href='<?php echo $this->Url->build('/mt_categories/index/');?>';" class="btn-info btn-xs" style='width:150px;height:30px;cursor:pointer'>一覧</button></td>
+				</tr>
+				<tr>
+					<th>状況一覧</th>
+					<td width="30%"><button onclick="location.href='<?php echo $this->Url->build('/mt_subcategories/index/');?>';" class="btn-info btn-xs" style='width:150px;height:30px;cursor:pointer'>一覧</button></td>
+				</tr>
+				<tr>
+					<th>購入動機一覧</th>
+					<td width="30%"><button onclick="location.href='<?php echo $this->Url->build('/mt_statuses/index/');?>';" class="btn-info btn-xs" style='width:150px;height:30px;cursor:pointer'>一覧</button></td>
+				</tr>
+
+			</tbody>
+		</table>
+
+	</div>
+
 </div>
+<script>
+document.querySelectorAll('.legacy-settings-upload').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+        const importing = form.dataset.mode === 'import';
+        if (!form.querySelector('input[type="file"]').files.length) {
+            window.alert(importing ? '顧客データを選択してください' : '電話番号リストを選択してください');
+            event.preventDefault();
+            return;
+        }
+        if (!window.confirm(importing ? '取込を開始します。よろしいですか？' : '出力を開始します。よろしいですか？')) event.preventDefault();
+    });
+});
+</script>

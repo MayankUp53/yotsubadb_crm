@@ -119,13 +119,20 @@ class UsersTable extends Table
         return $validator;
     }
 
-    /**
-     * Returns a rules checker object that will be used for validating
-     * application integrity.
-     *
-     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
-     * @return \Cake\ORM\RulesChecker
-     */
+    /** Original User model validation, shared by Add and Edit. */
+    public function validationLegacy(Validator $validator): Validator
+    {
+        // Original User model requires only authority and name, including on update.
+        $message = '権限は必須です。選択してください。';
+        foreach (['auth', 'user_name'] as $field) {
+            $validator->requirePresence($field, true, $message)->notEmptyString($field, $message)->add($field, 'notBlank', [
+                'rule' => static fn($value): bool => is_scalar($value) && preg_match('/\S/u', (string)$value) === 1,
+                'message' => $message,
+            ]);
+        }
+        return $validator;
+    }
+
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         return $rules;
@@ -138,7 +145,7 @@ class UsersTable extends Table
      * @param array $options Options
      * @return \Cake\ORM\Query\SelectQuery
      */
-    public function findAuth(SelectQuery $query, array $options): SelectQuery
+    public function findAuth(SelectQuery $query, array $options = []): SelectQuery
     {
         return $query->where(['Users.deleted IS' => null]);
     }

@@ -40,6 +40,7 @@ class ContactsTable extends Table
         parent::initialize($config);
 
         $this->setTable('contacts');
+        $this->addBehavior('PaginationCount');
         $this->setDisplayField('id');
         $this->setPrimaryKey('id');
 
@@ -83,6 +84,26 @@ class ContactsTable extends Table
      * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
      * @return \Cake\ORM\RulesChecker
      */
+    public function validationLegacy(Validator $validator): Validator
+    {
+        // CakePHP 2 notEmpty rules validate submitted fields, without requiring absent fields.
+        $messages = [
+            'contact_company' => '問合せ会社名は必須です。入力してください。',
+            'contact_tantou' => '問合せ担当者名は必須です。入力してください。',
+            'date_want' => '希望日時は必須です。入力してください。',
+            'category_cd' => '処理区分は必須です。選択してください。',
+            'status_cd' => '完了区分は必須です。選択してください。',
+            'correspond_cd' => '対応区分は必須です。選択してください。',
+        ];
+        foreach ($messages as $field => $message) {
+            $validator->notEmptyString($field, $message)->add($field, 'notBlank', [
+                'rule' => static fn($value): bool => is_scalar($value) && preg_match('/\S/u', (string)$value) === 1,
+                'message' => $message,
+            ]);
+        }
+        return $validator;
+    }
+
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('customer_id', 'Customers'), ['errorField' => 'customer_id']);

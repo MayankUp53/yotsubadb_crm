@@ -1,0 +1,82 @@
+.settings-page {
+    --settings-label: #4169e1;
+    margin-bottom: 24px;
+}
+.settings-page.settings-edit { --settings-label: #ff8c00; }
+.settings-page .panel { margin-bottom: 20px; }
+.settings-page .panel-heading { padding: 11px 15px; }
+.settings-page .panel-body { padding: 16px; }
+.settings-page .panel-title { font-size: 16px; font-weight: 600; line-height: 1.4; }
+.settings-page .panel-info > .panel-heading { background: #4169e1; border-color: #4169e1; color: #fff; }
+.settings-page .table { margin-bottom: 0; }
+.settings-page .table th, .settings-page .table td { padding: 12px 15px; white-space: normal; overflow-wrap: anywhere; }
+.settings-page .table th { font-weight: 600; }
+.settings-page .input { margin-bottom: 0; }
+.settings-page .form-control { height: 34px; width: 100%; max-width: 100%; }
+.settings-page input[type="file"] { width: 100%; max-width: 100%; font-size: 13px; }
+.settings-page .btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 32px;
+    min-width: 100px;
+    padding: 5px 14px;
+    font-size: 13px;
+    border-radius: 3px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+.settings-page a.btn-info, .settings-page a.btn-success,
+.settings-page a.btn-warning, .settings-page a.btn-danger { color: #fff; }
+.settings-page a.btn-default { color: #333; }
+.settings-page .settings-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.settings-page .settings-actions-center { justify-content: center; padding: 18px 15px; }
+.settings-page .settings-actions-center > .btn { min-width: 150px; }
+.settings-page .settings-upload-row { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(220px, 1.4fr) auto; gap: 20px; align-items: center; }
+.settings-page .settings-upload-title { font-size: 14px; font-weight: 600; }
+.settings-page .settings-note { color: #666; font-size: 12px; line-height: 1.7; margin: 12px 0 0; }
+.settings-page .settings-section-link { margin: 12px 0 0; }
+.settings-page .settings-list-table th { width: 70%; }
+.settings-page .settings-list-table td { text-align: center; }
+.settings-page .settings-list-table .btn { min-width: 150px; }
+.settings-page .settings-field-label { width: 15%; min-width: 100px; background: var(--settings-label); color: #fff; }
+.settings-page .settings-field-label label { margin: 0; }
+.settings-page .settings-field-value { width: 35%; }
+.settings-page .settings-product-name { width: 35%; }
+.settings-page .settings-product-form .settings-field-label { width: 10%; }
+.settings-page .settings-product-form td { width: 15%; }
+.settings-page .settings-product-form .settings-product-name { width: 40%; }
+.settings-page .settings-detail-table th { width: 20%; background: var(--settings-label); color: #fff; }
+.settings-page .settings-audit { border-top: 1px solid #ddd; }
+.settings-page .settings-audit th { width: 15%; color: #555; background: #f8f8f8; }
+.settings-page .settings-audit td { width: 35%; }
+.settings-page .settings-readonly { display: inline-block; padding: 7px 0; font-variant-numeric: tabular-nums; }
+.settings-page .settings-help { color: #777; font-size: 12px; margin-top: 4px; }
+.settings-page .master-list { list-style: none; padding: 0; margin: 0; max-width: 900px; }
+.settings-page .master-row { display: flex; align-items: center; gap: 12px; border: 1px solid #d6dce1; border-radius: 4px; background: #fafbfc; padding: 10px 12px; margin-bottom: 7px; }
+.settings-page .master-row[draggable] { cursor: grab; }
+.settings-page .master-row.master-inactive { background: #e5e5e5; }
+.settings-page .master-id { color: #666; min-width: 26px; font-variant-numeric: tabular-nums; }
+.settings-page .master-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.settings-page .master-state, .settings-page .master-price { font-size: 12px; color: #555; white-space: nowrap; }
+.settings-page .master-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.settings-page .master-controls .btn { min-width: 48px; min-height: 28px; padding: 3px 8px; font-size: 12px; }
+.settings-page .master-controls .master-move { min-width: 28px; padding: 3px 6px; }
+.settings-page .settings-empty { padding: 20px; color: #666; text-align: center; }
+.settings-page .settings-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.settings-page .settings-tabs a { padding: 7px 14px; border: 1px solid #ddd; border-radius: 3px; background: #fff; }
+.settings-page .settings-tabs a.is-active { color: #fff; background: #20b2aa; border-color: #20b2aa; }
+.settings-page .settings-report { margin-top: 18px; }
+@media (max-width: 991px) {
+    .settings-page .settings-upload-row { grid-template-columns: 1fr; gap: 12px; }
+    .settings-page .settings-upload-row .settings-actions { justify-content: flex-start; }
+    .settings-page .master-row { flex-wrap: wrap; }
+    .settings-page .master-controls { margin-left: auto; }
+    .settings-page .settings-form-table { min-width: 580px; }
+}
+@media (max-width: 480px) {
+    .settings-page .master-controls { width: 100%; justify-content: flex-end; }
+    .settings-page .settings-actions-center > .btn { min-width: 110px; }
+    .settings-page .settings-list-table .btn { min-width: 80px; }
+    .settings-page .settings-audit th, .settings-page .settings-audit td { padding: 9px; }
+}

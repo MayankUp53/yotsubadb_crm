@@ -1,0 +1,9 @@
+/* Values used by app/webroot/css/style.css and the original CRM forms. */
+.legacy-crm-page .btn_margin { margin: 5px; }
+.legacy-crm-page .if100 { width: 100%; }
+.legacy-crm-page .numericStyle { text-align: right; }
+.legacy-crm-page .tbl { margin: 0 auto; border-collapse: separate; border-spacing: 5px; font-size: 14px; }
+.legacy-crm-page .form-control { display: inline-block; }
+.legacy-crm-page .filterable { margin-top: 15px; }
+.legacy-crm-page .input { margin: 0; }
+.legacy-crm-page td { vertical-align: middle; }
