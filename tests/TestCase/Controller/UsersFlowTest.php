@@ -168,11 +168,37 @@ class UsersFlowTest extends TestCase
         self::assertStringContainsString('value="existing-login"', $html);
         self::assertStringContainsString('bgcolor="#ff8c00"', $html);
         self::assertStringContainsString('更　新', $html);
-        self::assertStringNotContainsString('stored-test-password', $html);
+        self::assertStringContainsString('value="stored-test-password"', $html);
         self::assertStringNotContainsString('削　除', $html);
         self::assertStringNotContainsString('キャンセル', $html);
         self::assertStringNotContainsString('登録日時', $html);
         self::assertSame(1, substr_count($html, '<button'));
+    }
+
+    public function testNonBlankLoginIdMustBeUniqueOnAddAndEdit(): void
+    {
+        $this->connection->insert('users', ['loginid' => 'shared-login', 'user_name' => 'Existing', 'auth' => 9]);
+
+        $add = $this->controller('add', 'POST', [
+            'user_name' => 'Duplicate add', 'auth' => '9', 'loginid' => 'shared-login', 'password' => 'password',
+        ]);
+        self::assertNull($add->add());
+        self::assertNotEmpty($add->viewBuilder()->getVar('user')->getError('loginid'));
+        self::assertSame(1, TableRegistry::getTableLocator()->get('Users')->find()->count());
+
+        $this->connection->insert('users', ['loginid' => 'second-login', 'user_name' => 'Second', 'auth' => 9]);
+        $edit = $this->controller('edit', 'POST', [
+            'user_name' => 'Second', 'auth' => '9', 'loginid' => 'shared-login', 'password' => 'password',
+        ]);
+        self::assertNull($edit->edit('2'));
+        self::assertNotEmpty($edit->viewBuilder()->getVar('user')->getError('loginid'));
+        self::assertSame('second-login', TableRegistry::getTableLocator()->get('Users')->get(2)->loginid);
+
+        // Legacy optional credentials remain supported; multiple blank login IDs are allowed.
+        foreach (['Blank one', 'Blank two'] as $name) {
+            $blank = $this->controller('add', 'POST', ['user_name' => $name, 'auth' => '9', 'loginid' => '', 'password' => '']);
+            self::assertNotNull($blank->add());
+        }
     }
 
     public function testLegacyUserEditSavesDeletedUserAndPreservesTimestamps(): void

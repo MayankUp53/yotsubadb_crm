@@ -203,6 +203,9 @@ class SettingsFlowTest extends TestCase
         self::assertSame('70', $rows[0][5]);
         self::assertSame('0123456', $rows[0][6]);
         self::assertSame('', $rows[2][1]);
+        $this->connection->insert('customers', ['id' => 3, 'phone1' => '0311112222', 'customer_name' => 'Other group', 'belong' => 2]);
+        $otherGroup = iterator_to_array($export->exportRows([['電話番号'], ['0311112222']], 1));
+        self::assertSame('Other group', $otherGroup[0][1]);
         self::assertSame('sentinel', $this->connection->execute('SELECT phone1 FROM phones')->fetch('assoc')['phone1']);
         $request = $this->request('Settings', 'index');
         $controller = new SettingsDashboardHarness($request, 'Settings');

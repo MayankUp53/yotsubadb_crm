@@ -13,6 +13,7 @@ use App\Service\LegacyCrmImporter;
 use App\View\AppView;
 use Cake\Database\Connection;
 use Cake\Database\Driver\Sqlite;
+use Cake\Cache\Cache;
 use Cake\Datasource\ConnectionManager;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
@@ -29,9 +30,17 @@ class CustomersFlowTest extends TestCase
     private Connection $connection;
     private CustomersTable $customers;
     private ContactsTable $contacts;
+    private array $paginationCacheConfig = [];
 
     protected function setUp(): void
     {
+        $this->paginationCacheConfig = Cache::getConfig('crm_pagination') ?? [];
+        Cache::drop('crm_pagination');
+        Cache::setConfig('crm_pagination', [
+            'className' => 'Array',
+            'duration' => 3600,
+            'groups' => ['crm_pagination'],
+        ]);
         ConnectionManager::setConfig('legacy_test', ['className' => Connection::class, 'driver' => Sqlite::class, 'database' => ':memory:']);
         $this->connection = ConnectionManager::get('legacy_test');
         foreach (['customers' => LegacyCrm::customerFields() + ['name' => '', 'phone' => '', 'phone_only' => '', 'tel_only' => '', 'client_cd' => '', 'belong' => ''], 'contacts' => ['customer_id' => ''] + LegacyCrm::contactFields()] as $name => $fields) {
@@ -63,6 +72,10 @@ class CustomersFlowTest extends TestCase
 
     protected function tearDown(): void
     {
+        Cache::drop('crm_pagination');
+        if ($this->paginationCacheConfig) {
+            Cache::setConfig('crm_pagination', $this->paginationCacheConfig);
+        }
         TableRegistry::getTableLocator()->clear();
         $this->connection->getDriver()->disconnect();
         ConnectionManager::drop('legacy_test');
@@ -416,7 +429,7 @@ class CustomersFlowTest extends TestCase
         $this->addContact($customerId);
         $this->controller('Customers', 'delete', 'POST')->delete((string)$customerId);
         self::assertSame(0, LegacyCrm::search($this->customers)->count());
-        self::assertSame(0, LegacyCrm::search($this->contacts)->count());
+        self::assertSame(1, LegacyCrm::search($this->contacts)->count());
     }
 
     public function testSearchPersistenceAndCsv(): void
@@ -448,6 +461,9 @@ class CustomersFlowTest extends TestCase
 
     public function testCsvHeadersMatchActiveLegacyControllerDefinitions(): void
     {
+        if (!is_dir(ROOT . '/app/Controller')) {
+            self::markTestSkipped('Legacy app/ source is not present in this checkout.');
+        }
         foreach (['Customers', 'Contacts'] as $controller) {
             $source = file_get_contents(ROOT . '/app/Controller/' . $controller . 'Controller.php');
             $code = '';
@@ -607,7 +623,7 @@ class CustomersFlowTest extends TestCase
         $contactId = $this->addContact($id);
         $this->customers->updateAll(['belong' => 2], ['id' => $id]);
         self::assertSame(0, LegacyCrm::search($this->customers, [], 1)->count());
-        self::assertSame(0, LegacyCrm::search($this->contacts, [], 1)->count());
+        self::assertSame(1, LegacyCrm::search($this->contacts, [], 1)->count());
         self::assertSame(1, LegacyCrm::search($this->contacts, [], 2)->count());
         $importer = new LegacyCrmImporter($this->customers, $this->contacts);
         self::assertSame(1, $importer->import([['id', 'customer_id', 'kekka'], [$contactId, $id, '1']], 'contacts', 7, 1)['failed']);
@@ -644,7 +660,7 @@ class CustomersFlowTest extends TestCase
         self::assertSame('山田', $controller->viewBuilder()->getVar('searchData')['s_customer_name']);
     }
 
-    public function testListPaginationNeverRunsACountQuery(): void
+    public function testListPaginationHasExactTotalsAndPageNumbers(): void
     {
         $customerId = $this->addCustomer();
         for ($i = 0; $i < 45; $i++) {
@@ -652,14 +668,14 @@ class CustomersFlowTest extends TestCase
         }
         foreach ([1 => 20, 2 => 20, 3 => 5] as $page => $expected) {
             $controller = $this->controller('Contacts', 'index');
-            $controller->rejectCount = true;
             $controller->setRequest($controller->getRequest()->withQueryParams(['page' => (string)$page]));
             $controller->index();
             $records = $controller->viewBuilder()->getVar('records');
             self::assertCount($expected, $records);
             self::assertSame($page, $records->currentPage());
             self::assertSame($page < 3, $records->hasNextPage());
-            self::assertNull($records->totalCount());
+            self::assertSame(45, $records->totalCount());
+            self::assertSame(3, $records->pageCount());
         }
     }
 

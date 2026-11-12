@@ -52,7 +52,7 @@ trait LegacyCrmActionsTrait
         $belong = $userBelong === null ? null : (int)$userBelong;
         $query->counter(fn($countQuery): int => \App\Service\LegacyPaginationCount::count($countQuery, $searchData, $belong));
         $records = $this->paginate($query, [
-            'className' => \Cake\Datasource\Paging\NumericPaginator::class,
+            'className' => \App\Datasource\Paging\LegacyNumericPaginator::class,
             'limit' => 20,
             'maxLimit' => 100,
             'sortableFields' => [],

@@ -137,10 +137,13 @@ final class LegacyCrm
         $alias = $table->getAlias();
         $query = $table->find()->where(["$alias.deleted IS" => null]);
         if ($contacts) {
-            $query->contain(['Customers'])->where(['Customers.deleted IS' => null]);
+            // CakePHP 2 Contacts index scoped only the contact itself. Keep the
+            // parent available for display/search, but do not hide contacts
+            // because their customer is deleted or belongs to another group.
+            $query->contain(['Customers']);
         }
         $customerAlias = $contacts ? 'Customers' : $alias;
-        if ($belong !== null && $table->getConnection()->getSchemaCollection()->describe('customers')->hasColumn('belong')) {
+        if (!$contacts && $belong !== null && $table->getConnection()->getSchemaCollection()->describe('customers')->hasColumn('belong')) {
             $query->where(["$customerAlias.belong IN" => [0, $belong]]);
         }
         $customerFields = array_keys(self::customerFields());

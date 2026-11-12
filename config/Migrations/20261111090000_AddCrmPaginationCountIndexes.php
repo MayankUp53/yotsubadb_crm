@@ -8,7 +8,7 @@ class AddCrmPaginationCountIndexes extends AbstractMigration
     public function up(): void
     {
         foreach ([
-            'customers' => ['id', 'deleted', 'belong'],
+            'customers' => ['deleted', 'belong', 'id'],
             'contacts' => ['deleted', 'customer_id'],
         ] as $name => $columns) {
             $table = $this->table($name);

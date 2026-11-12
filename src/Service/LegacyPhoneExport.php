@@ -19,7 +19,7 @@ final class LegacyPhoneExport
             '住所1（県）', '住所2（市区郡）', '住所3（町地番）', '住所4（建物名）', '電話番号（「-」有）'];
     }
 
-    public function exportRows(array $rows, ?int $belong = null): iterable
+    public function exportRows(array $rows, ?int $_belong = null): iterable
     {
         if (count($rows) < 2) {
             throw new InvalidArgumentException('電話番号リストにデータがありません。');
@@ -46,7 +46,9 @@ final class LegacyPhoneExport
         $fields = ['customer_name', 'name_kana', 'gender', 'age', 'nendai', 'zip', 'address1', 'address2', 'address3', 'address4', 'tel'];
         foreach (array_chunk($phones, 500) as $batch) {
             $matches = [];
-            $query = LegacyCrm::search($this->customers, [], $belong)->where(['Customers.phone1 IN' => array_values(array_unique($batch))]);
+            // Legacy phone-list export is shared across groups; unlike the
+            // Customers screen it must not apply the logged-in user's belong.
+            $query = LegacyCrm::search($this->customers, [], null)->where(['Customers.phone1 IN' => array_values(array_unique($batch))]);
             foreach ($query->all() as $customer) {
                 $matches[$customer->phone1][] = $customer;
             }

@@ -31,7 +31,7 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}', 'inputContainerErr
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">ログインID</td>
                 <td><?= $this->Form->control('loginid', ['label' => false, 'required' => false, 'type' => 'text', 'class' => 'form-control', 'style' => 'width:100%']) ?></td>
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">パスワード</td>
-                <td><?= $this->Form->control('password', ['label' => false, 'required' => false, 'type' => 'password', 'class' => 'form-control', 'style' => 'width:100%', 'value' => '']) ?></td>
+                <td><?= $this->Form->control('password', ['label' => false, 'required' => false, 'type' => 'password', 'class' => 'form-control', 'style' => 'width:100%', 'value' => (string)$user->password]) ?></td>
             </tr>
         </tbody>
     </table>

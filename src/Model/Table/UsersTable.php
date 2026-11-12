@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -135,6 +136,27 @@ class UsersTable extends Table
 
     public function buildRules(RulesChecker $rules): RulesChecker
     {
+        $rules->add(
+            function (EntityInterface $entity): bool {
+                $loginId = (string)$entity->get('loginid');
+                if ($loginId === '') {
+                    return true;
+                }
+
+                $query = $this->find()->where(['Users.loginid' => $loginId]);
+                if (!$entity->isNew() && $entity->get('id') !== null) {
+                    $query->where(['Users.id !=' => $entity->get('id')]);
+                }
+
+                return !$query->first();
+            },
+            'uniqueLoginId',
+            [
+                'errorField' => 'loginid',
+                'message' => 'このログインIDは既に使用されています。',
+            ]
+        );
+
         return $rules;
     }
 
