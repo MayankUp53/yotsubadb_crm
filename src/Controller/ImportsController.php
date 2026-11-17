@@ -52,7 +52,7 @@ class ImportsController extends AppController
     {
         $this->request->allowMethod(['get', 'post']);
         if (!$this->request->is('post')) {
-            return $this->redirect(['action' => 'index', '?' => ['type' => $this->importType()]]);
+            return $this->redirect(['controller' => 'Settings', 'action' => 'index']);
         }
         $type = $this->importType();
         if (!$this->getCurrentUser() || (string)$this->getCurrentUser()->auth === '0') {
@@ -64,22 +64,40 @@ class ImportsController extends AppController
         }
         if (!$file instanceof UploadedFileInterface || $file->getError() !== UPLOAD_ERR_OK) {
             $this->Flash->error('ファイルを選択してください。');
-            return $this->redirect(['action' => 'index', '?' => ['type' => $type]]);
+            return $this->redirect(['controller' => 'Settings', 'action' => 'index']);
         }
         $extension = strtolower(pathinfo($file->getClientFilename() ?? '', PATHINFO_EXTENSION));
         if (!in_array($extension, ['csv', 'xlsx', 'xls', 'ods'], true)) {
             $this->Flash->error('CSV / Excel / ODS ファイルを選択してください。');
-            return $this->redirect(['action' => 'index', '?' => ['type' => $type]]);
+            return $this->redirect(['controller' => 'Settings', 'action' => 'index']);
         }
         try {
             $rows = SpreadsheetUpload::rows($file);
             $user = $this->getCurrentUser();
             $report = (new LegacyCrmImporter($this->fetchTable('Customers'), $this->fetchTable('Contacts')))->import($rows, $type, (int)($user?->id ?? 0), $user?->belong === null ? null : (int)$user->belong);
-            $this->set(compact('type', 'report') + ['warning' => 0]);
-            $this->viewBuilder()->setTemplate('index');
+            if ($report['failed'] === 0) {
+                $this->Flash->success(sprintf(
+                    '取込が完了しました。新規登録：%d件 ／ 更新：%d件',
+                    $report['inserted'],
+                    $report['updated']
+                ));
+                return $this->redirect(['controller' => 'Settings', 'action' => 'index']);
+            }
+            $details = array_map(
+                static fn(array $error): string => sprintf('%d行目：%s', $error['row'], $error['message']),
+                $report['errors']
+            );
+            $this->Flash->error(sprintf(
+                '取込結果：新規登録 %d件 ／ 更新 %d件 ／ エラー %d件。%s',
+                $report['inserted'],
+                $report['updated'],
+                $report['failed'],
+                implode(' ／ ', $details)
+            ));
+            return $this->redirect(['controller' => 'Settings', 'action' => 'index']);
         } catch (\Throwable $e) {
             $this->Flash->error($e instanceof \InvalidArgumentException ? $e->getMessage() : 'ファイルを読み込めません。形式と内容を確認してください。');
-            return $this->redirect(['action' => 'index', '?' => ['type' => $type]]);
+            return $this->redirect(['controller' => 'Settings', 'action' => 'index']);
         }
     }
 

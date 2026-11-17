@@ -579,7 +579,7 @@ class CustomersFlowTest extends TestCase
         $result = $importer->import([['customer_id', 'kekka', 'memo'], ['1', '1', 'Imported'], ['999', '1', 'Invalid']], 'contacts', 7);
         self::assertSame(1, $result['inserted']);
         self::assertSame(1, $result['failed']);
-        self::assertSame(3, $result['errors'][0]['row']);
+        self::assertSame(2, $result['errors'][0]['row']);
         $result = $importer->import([['id', 'customer_id', 'kekka', 'memo'], ['1', '1', '1', 'Updated']], 'contacts', 7);
         self::assertSame(1, $result['updated']);
         self::assertSame('Updated', $this->contacts->get(1)->memo);
@@ -863,8 +863,9 @@ class CustomersFlowTest extends TestCase
                 ->withParsedBody(['type' => 'customers', 'result' => new \Laminas\Diactoros\UploadedFile($filePath, filesize($filePath), UPLOAD_ERR_OK, 'customers.csv', 'text/csv')]);
             Router::setRequest($request);
             $controller = new LegacyImportsHarness($request, 'Imports');
-            $controller->import();
-            self::assertSame(1, $controller->viewBuilder()->getVar('report')['inserted']);
+            $importResponse = $controller->import();
+            self::assertStringEndsWith('/settings', $importResponse->getHeaderLine('Location'));
+            self::assertStringContainsString('取込が完了しました', $controller->getRequest()->getSession()->read('Flash.flash.0.message'));
             $imported = $this->customers->find()->firstOrFail();
             self::assertEquals(1, $imported->gender);
             self::assertEquals(7, $imported->nendai);
@@ -880,9 +881,31 @@ class CustomersFlowTest extends TestCase
             self::assertEquals(2, $templateCustomer->gender);
             self::assertEquals(6, $templateCustomer->nendai);
             $book->disconnectWorksheets();
-            $view = new AppView($request);
-            $view->set($controller->viewBuilder()->getVars());
-            self::assertStringContainsString('取込結果', $view->render('Imports/index', false));
+            // A fully successful import redirects to Settings instead of rendering the report page.
+        } finally {
+            unlink($filePath);
+        }
+    }
+
+    public function testImportWithRowErrorsRedirectsToSettingsWithDetails(): void
+    {
+        $filePath = tempnam(TMP, 'legacy-import-error-');
+        $stream = fopen($filePath, 'w');
+        fputcsv($stream, ['customer_id', 'kekka', 'memo']);
+        fputcsv($stream, ['999999', '1', 'Invalid parent']);
+        fclose($stream);
+        try {
+            $request = (new ServerRequest(['environment' => ['REQUEST_METHOD' => 'POST'], 'session' => new Session()]))
+                ->withAttribute('params', ['controller' => 'Imports', 'action' => 'import', 'plugin' => null, '_ext' => null, 'pass' => []])
+                ->withParsedBody(['type' => 'contacts', 'result' => new \Laminas\Diactoros\UploadedFile($filePath, filesize($filePath), UPLOAD_ERR_OK, 'contacts.csv', 'text/csv')]);
+            Router::setRequest($request);
+            $controller = new LegacyImportsHarness($request, 'Imports');
+
+            $response = $controller->import();
+            self::assertStringEndsWith('/settings', $response->getHeaderLine('Location'));
+            $message = $controller->getRequest()->getSession()->read('Flash.flash.0.message');
+            self::assertStringContainsString('エラー 1件', $message);
+            self::assertStringContainsString('1行目', $message);
         } finally {
             unlink($filePath);
         }

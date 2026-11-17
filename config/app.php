@@ -96,6 +96,12 @@ return [
      * Configure the cache adapters.
      */
     'Cache' => [
+        'crm_pagination' => [
+            'className' => FileEngine::class,
+            'path' => CACHE . 'crm_pagination' . DS,
+            'duration' => '+1 minute',
+            'groups' => ['crm_pagination'],
+        ],
         'default' => [
             'className' => FileEngine::class,
             'path' => CACHE,

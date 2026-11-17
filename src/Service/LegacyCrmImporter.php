@@ -83,7 +83,8 @@ final class LegacyCrmImporter
                 $result[$new ? 'inserted' : 'updated']++;
             } catch (\Throwable $e) {
                 $result['failed']++;
-                $result['errors'][] = ['row' => $offset + 2, 'message' => $e instanceof InvalidArgumentException ? $e->getMessage() : '保存に失敗しました。入力値と重複を確認してください。'];
+                // Report data-row numbers; the spreadsheet header is not counted.
+                $result['errors'][] = ['row' => $offset + 1, 'message' => $e instanceof InvalidArgumentException ? $e->getMessage() : '保存に失敗しました。入力値と重複を確認してください。'];
             }
         }
         return $result;
