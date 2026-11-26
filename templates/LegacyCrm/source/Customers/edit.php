@@ -38,7 +38,7 @@
 					<td style="vertical-align:middle;color:#ffffff;" bgcolor="#4169E1">郵便番号</td>
 					<span class="p-country-name" style="display:none;">Japan</span>
 					<td><?php echo $this->LegacyCrmForm->input('zip', array('label'=>false, 'div'=>false, 'type' => 'text', 'class'=>'form-control zip p-postal-code', 'style'=>'width:100%;')); ?></td>
-					<td colspan="2"><input type="text" size="40" readonly="readonly" class="p-region p-locality p-street-address p-extended-address" /></td>
+					<td colspan="2"><input type="text" size="40" readonly="readonly" class="p-region p-locality p-street-address p-extended-address" value="郵便番号を再度入力してください。" /></td>
 				</tr>
 
 				<tr>
